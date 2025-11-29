@@ -198,12 +198,13 @@ html, body, [class*="css"]  {
 
 /* Login Card */
 .login-card {
-    max-width: 520px;
+    max-width: 560px;
     margin: 10px auto;
     padding: 22px;
     border-radius: 12px;
     background: linear-gradient(180deg,#ffffff,#f7fbff);
     box-shadow: 0 10px 30px rgba(2,6,23,0.08);
+    text-align: left;
 }
 
 /* HERO / FEATURE CARDS */
@@ -261,6 +262,20 @@ st.markdown(custom_css, unsafe_allow_html=True)
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+# Keep track of last login attempt result to only show error when submitted wrong credentials
+if "last_login_failed" not in st.session_state:
+    st.session_state.last_login_failed = False
+
+# -------------------------
+# LOGIN PAGE (Shows ONLY when not logged in) - nice centered card
+# -------------------------
+ # ← stops showing dashboard when not logged in
+ # -------------------------
+# SESSION DEFAULTS
+# -------------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
 # -------------------------
 # LOGIN PAGE (Shows ONLY when not logged in) - nice centered card
 # -------------------------
@@ -268,10 +283,9 @@ if not st.session_state.logged_in:
     st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
     cols = st.columns([1, 2, 1])
     with cols[1]:
-       
+        st.markdown("<div class='login-card'>", unsafe_allow_html=True)
         st.markdown("<h2 style='margin-top:0;'>🔐 EnterprisePro Login</h2>", unsafe_allow_html=True)
-        st.markdown("<p class='small-muted'>Sign in to access the Enterprise Management Dashboard "
-      , unsafe_allow_html=True)
+        st.markdown("<p class='small-muted'>Sign in to access the Enterprise Management Dashboard — demo credentials: <strong>admin / admin123</strong></p>", unsafe_allow_html=True)
 
         # --- LOGIN FORM ---
         with st.form("login_form", clear_on_submit=False):
@@ -279,17 +293,16 @@ if not st.session_state.logged_in:
             password = st.text_input("Password", type="password", placeholder="admin123")
             submitted = st.form_submit_button("Sign in")
 
-        # -------------------------
-        # FIXED VALIDATION LOGIC
-        # -------------------------
+        # --- LOGIN VALIDATION ---
         if submitted:
             if username.strip() == "admin" and password.strip() == "admin123":
                 st.session_state.logged_in = True
-                st.rerun()          # SUCCESS → Load dashboard
+                st.success("✅ Login successful! Redirecting…")
+                st.rerun()  # Reloads app to show dashboard
             else:
-                st.error("❌ Invalid credentials")  # Only shows when wrong input
+                st.error("❌ Invalid credentials")
 
-    st.stop()  # stops showing dashboard when not logged in
+    st.stop()  # Stops showing dashboard when not logged in
 
 
 
@@ -301,8 +314,6 @@ with col2:
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()   # ← FIX: Logs out in ONE click
-
-
 # -------------------------
 # MAIN DASHBOARD HEADER + MID FEATURE CARDS
 # -------------------------
@@ -357,7 +368,7 @@ module = st.sidebar.radio("Select Module", [
 ])
 
 # -------------------------
-# DASHBOARD MODULE
+# DASHBOARD MODULE (with professional color visuals)
 # -------------------------
 if module == "🏠 Dashboard":
     st.subheader("🏠 Overview")
@@ -378,17 +389,60 @@ if module == "🏠 Dashboard":
 
     st.markdown("---")
 
+    # Employees by Department - colored professional bars
     dept_df = query_df("SELECT department, COUNT(*) as count FROM employees GROUP BY department")
     if not dept_df.empty:
-        fig = px.bar(dept_df, x="department", y="count", text="count", title="Employees by Department")
+        # Use a professional palette; ensure deterministic mapping if many categories
+        colors = px.colors.qualitative.T10  # professional discrete palette
+        fig = px.bar(
+            dept_df,
+            x="department",
+            y="count",
+            text="count",
+            title="👥 Employees by Department",
+            color="department",
+            color_discrete_sequence=colors,
+            template="plotly_white"
+        )
+        fig.update_traces(textposition='outside', marker_line_width=1)
+        fig.update_layout(
+            title=dict(x=0.5, xanchor='center', font=dict(size=18)),
+            xaxis_title="Department",
+            yaxis_title="Employees",
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=60, b=40, l=40, r=20),
+            legend_title_text='Department'
+        )
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("No employee department data yet.")
 
+    # Transactions over time - colored by type
     tx_df = query_df("SELECT tx_date, tx_type, amount FROM transactions")
     if not tx_df.empty:
         tx_df['tx_date'] = pd.to_datetime(tx_df['tx_date'])
-        fig2 = px.line(tx_df, x='tx_date', y='amount', color='tx_type', markers=True, title="Transactions Over Time")
+        colors_tx = {"Income": "#10b981", "Expense": "#ef4444"}  # green/red
+        fig2 = px.line(
+            tx_df,
+            x='tx_date',
+            y='amount',
+            color='tx_type',
+            markers=True,
+            title="💰 Transactions Over Time",
+            color_discrete_map=colors_tx,
+            template="plotly_white"
+        )
+        fig2.update_traces(mode="lines+markers", hovertemplate='%{x}<br>%{y:$,.2f}<extra>%{legendgroup}</extra>')
+        fig2.update_layout(
+            title=dict(x=0.5, xanchor='center', font=dict(size=18)),
+            xaxis_title="Date",
+            yaxis_title="Amount",
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=60, b=40, l=40, r=20),
+            legend_title_text='Transaction Type'
+        )
         st.plotly_chart(fig2, use_container_width=True)
     else:
         st.info("No transactions yet.")
@@ -432,7 +486,16 @@ elif module == "👥 HR":
                     st.balloons()
 
         st.markdown("#### Employees List")
+        # Search and quick export
         df_emp = query_df("SELECT * FROM employees ORDER BY id DESC")
+        cols = st.columns([3,1])
+        with cols[0]:
+            q = st.text_input("Search employee by name or code")
+        with cols[1]:
+            if st.button("Export Employees CSV"):
+                st.download_button("Download employees.csv", data=to_csv_bytes(df_emp), file_name="employees.csv", mime="text/csv")
+        if q:
+            df_emp = df_emp[df_emp.apply(lambda r: q.lower() in str(r['name']).lower() or q.lower() in str(r['emp_code']).lower(), axis=1)]
         display_aggrid(df_emp)
 
     # -- Attendance tab
@@ -459,7 +522,7 @@ elif module == "👥 HR":
     # -- Reports tab
     with hr_tab[2]:
         st.markdown("### 📋 HR Reports")
-        if st.button("Export Employees CSV"):
+        if st.button("Export Employees CSV (Reports)"):
             df = query_df("SELECT * FROM employees")
             st.download_button("Download employees.csv", data=to_csv_bytes(df), file_name="employees.csv", mime="text/csv")
         st.markdown("You can export HR tables as CSV from any listing.")
@@ -494,7 +557,11 @@ elif module == "💰 Finance":
         display_aggrid(df_tx)
         if not df_tx.empty:
             summary = df_tx.groupby("tx_type")["amount"].sum().reset_index()
-            fig4 = px.bar(summary, x="tx_type", y="amount", text="amount", title="Transaction Summary by Type")
+            colors = px.colors.qualitative.Plotly
+            fig4 = px.bar(summary, x="tx_type", y="amount", text="amount", title="Transaction Summary by Type",
+                          color="tx_type", color_discrete_sequence=["#10b981", "#ef4444"])
+            fig4.update_traces(textposition='outside', marker_line_width=1)
+            fig4.update_layout(template="plotly_white", title=dict(x=0.5))
             st.plotly_chart(fig4, use_container_width=True)
         else:
             st.info("No transactions to show.")
@@ -608,7 +675,6 @@ elif module == "🤝 CRM":
     with crm_tab[2]:
         st.markdown("### 🧾 Sales Orders")
         if st.button("Create Demo Sales Order (example)"):
-            # simple demo insertion to show UI (keeps backend unchanged)
             insert_commit("INSERT INTO sales_orders(order_no,customer_id,order_date,total_amount,status) VALUES (?,?,?,?,?)",
                           (f"SO-{int(datetime.datetime.now().timestamp())}", 1, datetime.date.today().isoformat(), 0.0, "New"))
             st.success("Demo sales order created.")
@@ -617,12 +683,11 @@ elif module == "🤝 CRM":
         display_aggrid(df_sales)
 
 # -------------------------
-# ANALYTICS MODULE (small enhancements)
+# ANALYTICS MODULE
 # -------------------------
 elif module == "📊 Analytics":
     st.subheader("📊 Analytics")
     st.markdown("Quick charts and CSV exports.")
-    # quick export of core tables
     table = st.selectbox("Choose table to view/export", ["employees","customers","transactions","purchase_orders","tickets"])
     df_view = query_df(f"SELECT * FROM {table} ORDER BY id DESC")
     display_aggrid(df_view)
@@ -650,12 +715,10 @@ elif module == "⬆️⬇️ Data Import/Export":
             st.write("Preview:")
             st.dataframe(df_up.head())
             if st.button("Append CSV to DB"):
-                # Very small, conservative import logic (no backend schema changes)
                 inserted = 0
                 for _, row in df_up.iterrows():
                     try:
                         if upload_table == "employees":
-                            # expect: emp_code,name,department,role,hire_date,email,phone
                             insert_commit("INSERT INTO employees(emp_code,name,department,role,hire_date,email,phone) VALUES (?,?,?,?,?,?,?)",
                                           (str(row.get('emp_code','')).strip(), str(row.get('name','')).strip(),
                                            str(row.get('department','')).strip(), str(row.get('role','')).strip(),
@@ -676,7 +739,6 @@ elif module == "⬆️⬇️ Data Import/Export":
                                            float(row.get('amount',0.0))))
                         inserted += 1
                     except Exception:
-                        # skip problematic rows, keep processing
                         continue
                 st.success(f"Append finished. Rows processed: {len(df_up)}. (Inserted ~{inserted})")
         except Exception as e:
@@ -692,7 +754,7 @@ elif module == "📄 PDF Snapshot":
         sections = [
             ("Employees", str(query_df("SELECT COUNT(*) as cnt FROM employees").iloc[0]['cnt'])),
             ("Customers", str(query_df("SELECT COUNT(*) as cnt FROM customers").iloc[0]['cnt'])),
-            ("Pending POs", str(query_df("SELECT COUNT(*) as cnt FROM purchase_orders WHERE status='Pending'").iloc[0]['cnt'])) ,
+            ("Pending POs", str(query_df("SELECT COUNT(*) as cnt FROM purchase_orders WHERE status='Pending'").iloc[0]['cnt'])),
             ("Open Tickets", str(query_df("SELECT COUNT(*) as cnt FROM tickets WHERE status='Open'").iloc[0]['cnt']))
         ]
         pdf_bytes = make_pdf(title, sections)
