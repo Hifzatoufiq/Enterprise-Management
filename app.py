@@ -284,8 +284,8 @@ if not st.session_state.logged_in:
     cols = st.columns([1, 2, 1])
     with cols[1]:
        
-        st.markdown("<h2 style='margin-top:0;'>🔐 EnterprisePro Login</h2>", unsafe_allow_html=True)
-        st.markdown("<p class='small-muted'>Sign in to access the Enterprise Management Dashboard </p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin-top:0;'>🔐 Bareera International</h2>", unsafe_allow_html=True)
+        st.markdown("<p class='small-muted'>Sign in to access the Bareera International Dashboard </p>", unsafe_allow_html=True)
 
         # --- LOGIN FORM ---
         with st.form("login_form", clear_on_submit=False):
