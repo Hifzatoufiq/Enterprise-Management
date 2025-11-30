@@ -186,7 +186,7 @@ def validate_phone(phone: str) -> bool:
 # -------------------------
 # UI THEME & STYLING (FRONTEND ONLY)
 # -------------------------
-st.set_page_config(page_title="EnterprisePro", layout="wide", page_icon="🏢", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Bareera International", layout="wide", page_icon="🏢", initial_sidebar_state="expanded")
 
 custom_css = """
 <style>
@@ -284,8 +284,8 @@ if not st.session_state.logged_in:
     cols = st.columns([1, 2, 1])
     with cols[1]:
        
-        st.markdown("<h2 style='margin-top:0;'>🔐 EnterprisePro Login</h2>", unsafe_allow_html=True)
-        st.markdown("<p class='small-muted'>Sign in to access the Enterprise Management Dashboard </p>", unsafe_allow_html=True)
+        st.markdown("<h2 style='margin-top:0;'>🔐 Bareera International</h2>", unsafe_allow_html=True)
+        st.markdown("<p class='small-muted'>Sign in to access the Bareera International Dashboard </p>", unsafe_allow_html=True)
 
         # --- LOGIN FORM ---
         with st.form("login_form", clear_on_submit=False):
@@ -317,7 +317,7 @@ with col2:
 # -------------------------
 # MAIN DASHBOARD HEADER + MID FEATURE CARDS
 # -------------------------
-st.title("🏢 Enterprise Management Dashboard")
+st.title("🏢 Bareera International Dashboard")
 st.markdown("**Professional dashboard for HR, Finance, Procurement & CRM**")
 st.markdown("")
 
@@ -326,7 +326,7 @@ fc1, fc2 = st.columns([2,1])
 with fc1:
     st.markdown("""
     <div class="feature-card">
-      <div class="feature-title">Welcome to EnterprisePro</div>
+      <div class="feature-title">Welcome to Bareera International</div>
       <div class="feature-desc">A clean professional UI for HR, Finance, Procurement, CRM and Analytics. This front-end layer provides validation, exports, imports and quick snapshots while leaving your database/backend logic unchanged.</div>
       <div style="height:10px"></div>
       <div style="display:flex;gap:10px;">
@@ -749,7 +749,7 @@ elif module == "⬆️⬇️ Data Import/Export":
 # -------------------------
 elif module == "📄 PDF Snapshot":
     st.subheader("📄 Generate PDF Summary")
-    title = st.text_input("Report Title", "Enterprise Project Snapshot")
+    title = st.text_input("Report Title", "Bareera International Project Snapshot")
     if st.button("Generate PDF"):
         sections = [
             ("Employees", str(query_df("SELECT COUNT(*) as cnt FROM employees").iloc[0]['cnt'])),
@@ -758,7 +758,7 @@ elif module == "📄 PDF Snapshot":
             ("Open Tickets", str(query_df("SELECT COUNT(*) as cnt FROM tickets WHERE status='Open'").iloc[0]['cnt']))
         ]
         pdf_bytes = make_pdf(title, sections)
-        st.download_button("Download PDF", data=pdf_bytes, file_name="enterprise_snapshot.pdf", mime="application/pdf")
+        st.download_button("Download PDF", data=pdf_bytes, file_name="Bareera International.pdf", mime="application/pdf")
 
 # -------------------------
 # Footer / small tips
